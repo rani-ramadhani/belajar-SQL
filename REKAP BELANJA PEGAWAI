@@ -1,0 +1,489 @@
+set dateformat dmy
+
+declare @tahap char(2), @tanggal datetime, @unitkey varchar(10)
+select @tahap = '4',@tanggal = '31-12-2024', @unitkey=''
+
+if exists (select name from tempdb..sysobjects  where name like '#bukubesar_R6%')
+  drop table #bukubesar_R6
+if exists (select name from tempdb..sysobjects  where name like '#DIPA%')
+  drop table #DIPA
+if exists (select name from tempdb..sysobjects  where name like '#DPA%')
+  drop table #DPA
+if exists (select name from tempdb..sysobjects  where name like '#ANGGARAN_REALISASI%')
+  drop table #ANGGARAN_REALISASI
+if exists (select name from tempdb..sysobjects  where name like '#AGAM%')
+  drop table #AGAM
+if exists (select name from tempdb..sysobjects  where name like '#matang%')
+  drop table #matang
+exec sp_deltabtemplike '#nmunit'
+exec sp_deltabtemplike '#1'
+exec sp_deltabtemplike '#2'
+exec sp_deltabtemplike '#3'
+exec sp_deltabtemplike '#4'
+exec sp_deltabtemplike '#5'
+exec sp_deltabtemplike '#6'
+exec sp_deltabtemplike '#7'
+exec sp_deltabtemplike '#8'
+exec sp_deltabtemplike '#9'
+exec sp_deltabtemplike '#10'
+exec sp_deltabtemplike '#11'
+exec sp_deltabtemplike '#12'
+exec sp_deltabtemplike '#13'
+exec sp_deltabtemplike '#14'
+exec sp_deltabtemplike '#15'
+exec sp_deltabtemplike '#16'
+exec sp_deltabtemplike '#17'
+exec sp_deltabtemplike '#18'
+exec sp_deltabtemplike '#19'
+exec sp_deltabtemplike '#20'
+exec sp_deltabtemplike '#21'
+exec sp_deltabtemplike '#22'
+exec sp_deltabtemplike '#23'
+exec sp_deltabtemplike '#24'
+exec sp_deltabtemplike '#25'
+exec sp_deltabtemplike '#26'
+exec sp_deltabtemplike '#27'
+exec sp_deltabtemplike '#28'
+exec sp_deltabtemplike '#29'
+exec sp_deltabtemplike '#30'
+exec sp_deltabtemplike '#31'
+exec sp_deltabtemplike '#32'
+exec sp_deltabtemplike '#33'
+exec sp_deltabtemplike '#34'
+exec sp_deltabtemplike '#35'
+exec sp_deltabtemplike '#36'
+exec sp_deltabtemplike '#37'
+exec sp_deltabtemplike '#38'
+exec sp_deltabtemplike '#39'
+exec sp_deltabtemplike '#40'
+exec sp_deltabtemplike '#41'
+exec sp_deltabtemplike '#42'
+exec sp_deltabtemplike '#43'
+exec sp_deltabtemplike '#44'
+exec sp_deltabtemplike '#45'
+exec sp_deltabtemplike '#46'
+exec sp_deltabtemplike '#47'
+exec sp_deltabtemplike '#48'
+
+SELECT '4.'+mtgkey mtgkey1,* INTO #matang FROM matangd WHERE LEFT(KDPER,1) = '4' 
+	UNION ALL	
+	SELECT '7.'+mtgkey mtgkey1,*  FROM matangd WHERE LEFT(KDPER,1) = '7'	
+	UNION ALL	
+	SELECT '5.'+mtgkey mtgkey1,* FROM matangr WHERE LEFT(KDPER,1) = '5'
+	UNION ALL	
+	SELECT '8.'+mtgkey mtgkey1,* FROM matangr WHERE LEFT(KDPER,1) = '8'	
+	UNION ALL
+	SELECT '6.'+mtgkey mtgkey1,* FROM matangb 
+--ambil data dari jurnal
+select JBKU,UNITKEY,KDSTATUS,NOBKUSKPD,NOBUKTI,TGLBUKTI,URAIAN,JMATANGD as JMATANG,KDKEG,MTGKEYD MTGKEY,KDPERD KDPER,'D' PERSACC,NILAID SALDO,TGL_VALID into #bukubesar_R6 from jurnal  
+where (ISNULL((@unitkey),'')='' OR UNITKEY = @unitkey) AND   JURNAL=1    
+AND jmatangd  IN ('4','5','6') AND   (ISNULL((@tanggal),'')='' OR TGL_VALID <=@tanggal)
+UNION ALL
+select JBKU,UNITKEY,KDSTATUS,NOBKUSKPD,NOBUKTI,TGLBUKTI,URAIAN,JMATANGK as JMATANG,KDKEG,MTGKEYK MTGKEY,KDPERK KDPER,'K' PERSACC,NILAIK SALDO,TGL_VALID from jurnal  
+where (ISNULL((@unitkey),'')='' OR UNITKEY = @unitkey)     AND   JURNAL=1    
+AND jmatangK IN ('4','5','6') AND   (ISNULL((@tanggal),'')='' OR TGL_VALID <=@tanggal)
+
+--ambil data dari anggaran
+SELECT UNITKEY, MTGKEY,KDKEGUNIT, sum(NILAI) Nilai INTO #DIPA
+FROM 
+(
+SELECT d.UNITKEY, '4.'+ d.MTGKEY AS MTGKEY,'' AS KDKEGUNIT, d.NILAI
+  FROM DASKD d LEFT OUTER JOIN SKDASK s ON d.UNITKEY = s.UNITKEY AND d.IDXDASK = s.IDXDASK
+  INNER JOIN DAFTUNIT a ON d.UNITKEY = a.UNITKEY
+WHERE (ISNULL((@unitkey),'')='' OR s.UNITKEY = @unitkey)AND s.KDTAHAP=@tahap AND s.IDXKODE=1 AND a.KDLEVEL = '3' 
+UNION all
+SELECT d.UNITKEY, '5.'+ d.MTGKEY AS MTGKEY,'' AS KDKEGUNIT, d.NILAI
+  FROM DASKRTL d LEFT OUTER JOIN SKDASK s ON d.UNITKEY = s.UNITKEY AND d.IDXDASK = s.IDXDASK
+  INNER JOIN DAFTUNIT a ON d.UNITKEY = a.UNITKEY
+WHERE (ISNULL((@unitkey),'')='' OR s.UNITKEY = @unitkey) AND s.KDTAHAP=@tahap AND s.IDXKODE IN(3,4) AND a.KDLEVEL = '3' 
+UNION all
+SELECT d.UNITKEY, '5.'+ d.MTGKEY AS MTGKEY,d.KDKEGUNIT, d.NILAI
+  FROM DASKR d LEFT OUTER JOIN SKDASK s ON d.UNITKEY = s.UNITKEY AND d.IDXDASK = s.IDXDASK
+  INNER JOIN DAFTUNIT a ON d.UNITKEY = a.UNITKEY
+WHERE (ISNULL((@unitkey),'')='' OR s.UNITKEY = @unitkey)AND s.KDTAHAP=@tahap AND s.IDXKODE IN(2) AND a.KDLEVEL = '3' 
+UNION all
+SELECT d.UNITKEY, '6.'+ d.MTGKEY AS MTGKEY,'' AS KDKEGUNIT, d.NILAI
+  FROM DASKB d LEFT OUTER JOIN SKDASK s ON d.UNITKEY = s.UNITKEY AND d.IDXDASK = s.IDXDASK
+  INNER JOIN DAFTUNIT a ON d.UNITKEY = a.UNITKEY
+WHERE (ISNULL((@unitkey),'')='' OR s.UNITKEY = @unitkey)AND s.KDTAHAP=@tahap AND s.IDXKODE IN(5,6,7) AND a.KDLEVEL = '3'
+)xx GROUP BY UNITKEY, MTGKEY,KDKEGUNIT
+
+SELECT UNITKEY, MTGKEY, sum(NILAI) Nilai 
+INTO #DPA
+FROM #DIPA
+GROUP BY UNITKEY, MTGKEY
+
+SELECT UNITKEY, MTGKEY,
+SUM(Anggaran) Anggaran,
+SUM(Realisasi) Realisasi 
+INTO #ANGGARAN_REALISASI
+FROM
+(
+SELECT  UNITKEY, MTGKEY,0 Anggaran,
+SUM(nilai_ini) Realisasi 
+
+FROM
+(
+SELECT   UNITKEY, LEFT(KDPER,2)+MTGKEY MTGKEY,  CASE WHEN JMATANG IN ('5') AND PERSACC='K' THEN -1 *SALDO ELSE SALDO END   nilai_ini, 0 nilai_lalu FROM #bukubesar_R6  WHERE 
+jmatang='5' 
+UNION ALL
+SELECT    UNITKEY, LEFT(KDPER,2)+MTGKEY MTGKEY,  CASE WHEN JMATANG IN ('4') AND PERSACC='D' THEN -1 *SALDO ELSE SALDO END   nilai_ini, 0 nilai_lalu FROM #bukubesar_R6  WHERE 
+jmatang='4'
+UNION ALL
+SELECT    UNITKEY, LEFT(KDPER,2)+MTGKEY MTGKEY,  CASE WHEN JMATANG IN ('6') AND PERSACC='D' THEN -1 *SALDO ELSE SALDO END   nilai_ini, 0 nilai_lalu FROM #bukubesar_R6  WHERE 
+jmatang='6' AND LEFT(kdper,3)='6.1'
+UNION ALL
+SELECT    UNITKEY, LEFT(KDPER,2)+MTGKEY MTGKEY,  CASE WHEN JMATANG IN ('6') AND PERSACC='K' THEN -1 *SALDO ELSE SALDO END   nilai_ini, 0 nilai_lalu FROM #bukubesar_R6  WHERE 
+jmatang='6' AND LEFT(kdper,3)='6.2'
+) xx GROUP BY  UNITKEY, MTGKEY   
+UNION ALL
+SELECT UNITKEY, MTGKEY,NILAI as Anggaran,0 Realisasi FROM #DPA  
+
+) X1 GROUP BY UNITKEY, MTGKEY
+
+--select * from #ANGGARAN_REALISASI
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_gaji_pokok_ASN, sum(Realisasi)Realisasi_Belanja_gaji_pokok_ASN into #1 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.01.01.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Keluarga_ASN, sum(Realisasi)Realisasi_Belanja_Tunjangan_Keluarga_ASN into #2 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.01.02.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Jabatan_ASN, sum(Realisasi)Realisasi_Belanja_Tunjangan_Jabatan_ASN into #3 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.01.03.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Fungsional_ASN, sum(Realisasi)Realisasi_Belanja_Tunjangan_Fungsional_ASN into #4 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.01.04.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Fungsional_Umum_ASN, sum(Realisasi)Realisasi_Belanja_Tunjangan_Fungsional_Umum_ASN into #5 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.01.05.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Beras_ASN, sum(Realisasi)Realisasi_Belanja_Tunjangan_Beras_ASN into #6 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.01.06.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_PPh_Tunjangan_Khusus_ASN, sum(Realisasi)Realisasi_Belanja_Tunjangan_PPh_Tunjangan_Khusus_ASN into #7 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.01.07.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Pembulatan_Gaji_ASN, sum(Realisasi)Realisasi_Belanja_Pembulatan_Gaji_ASN into #8 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.01.08.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Iuran_Jaminan_Kesehatan_ASN, sum(Realisasi)Realisasi_Belanja_Iuran_Jaminan_Kesehatan_ASN into #9 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.01.09.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Iuran_Jaminan_Kecelakaan_Kerja_ASN, sum(Realisasi)Realisasi_Belanja_Iuran_Jaminan_Kecelakaan_Kerja_ASN into #10 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.01.10.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Iuran_Jaminan_Kematian_ASN, sum(Realisasi)Realisasi_Belanja_Iuran_Jaminan_Kematian_ASN into #11 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.01.11.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Tambahan_Penghasilan_Berdasarkan_Beban_Kerja_ASN, sum(Realisasi)Realisasi_Tambahan_Penghasilan_Berdasarkan_Beban_Kerja_ASN into #12 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.02.01.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Tambahan_Penghasilan_Berdasarkan_Konsisi_Kerja_ASN, sum(Realisasi)Realisasi_Tambahan_Penghasilan_Berdasarkan_Kondisi_Kerja_ASN into #13 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.02.03.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Tambahan_Penghasilan_Berdasarkan_Kelangkaan_Profesi_ASN, sum(Realisasi)Realisasi_Anggaran_Tambahan_Penghasilan_Berdasarkan_Kelangkaan_Profesi_ASN into #14 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.02.04.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Insentif_Bagi_ASN_atas_Pemungutan_Pajak_Daerah, sum(Realisasi)Realisasi_Belanja_Insentif_Bagi_ASN_atas_Pemungutan_Pajak_Daerah into #15 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.03.01.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Bagi_ASN_atas_Insentif_Pemungutan_Retribusi_Daerah, sum(Realisasi)Realisasi_Belanja_Bagi_ASN_atas_Insentif_Pemungutan_Retribusi_Daerah into #16 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.03.02.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Profesi_Guru_TPG_PNSD, sum(Realisasi)Realisasi_Belanja_Tunjangan_Profesi_Guru_TPG_PNSD into #17 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.03.03.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tambahan_Penghasilan_Tamsil_Guru_PNSD, sum(Realisasi)Realisasi_Belanja_Tambahan_Penghasilan_Tamsil_Guru_PNSD into #18 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.03.05.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Jasa_Pelayanan_Kesehatan_Bagi_ASN, sum(Realisasi)Realisasi_Belanja_Jasa_Pelayanan_Kesehatan_Bagi_ASN into #19 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.03.06.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Honorarium, sum(Realisasi)Realisasi_Belanja_Honorarium into #20 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.03.07.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Uang_Representasi_DPRD, sum(Realisasi)Realisasi_Belanja_Uang_Representasi_DPRD into #21 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.04.01.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Keluarga_DPRD, sum(Realisasi)Realisasi_Belanja_Tunjangan_Keluarga_DPRD into #22 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.04.02.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Beras_DPRD, sum(Realisasi)Realisasi_Belanja_Tunjangan_Beras_DPRD into #23 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.04.03.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Uang_Paket_DPRD, sum(Realisasi)Realisasi_Belanja_Uang_Paket_DPRD into #24 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.04.04.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Jabatan_DPRD, sum(Realisasi)Realisasi_Belanja_Tunjangan_Jabatan_DPRD into #25 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.04.05.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Alat_Kelengkapan_DPRD, sum(Realisasi)Realisasi_Belanja_Tunjangan_Alat_Kelengkapan_DPRD into #26 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.04.06.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Alat_Kelengkapan_Lainnya_DPRD, sum(Realisasi)Realisasi_Belanja_Tunjangan_Alat_Kelengkapan_Lainnya_DPRD into #27 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.04.07.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Komunikasi_Intensif_Pimpinan_dan_Anggota_DPRD, sum(Realisasi)Realisasi_Belanja_Tunjangan_Komunikasi_Intensif_Pimpinan_dan_Anggota_DPRD into #28 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.04.08.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Reses_DPRD, sum(Realisasi)Realisasi_Belanja_Tunjangan_Reses_DPRD into #29 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.04.09.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Pembebanan_PPh_kepada_Pimpinan_dan_Anggota_DPRD, sum(Realisasi)Realisasi_Belanja_Pembebanan_PPh_kepada_Pimpinan_dan_Anggota_DPRD into #30 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.04.10.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Kesejahteraan_Pimpinan_dan_Anggota_DPRD, sum(Realisasi)Realisasi_Belanja_Tunjangan_Kesejahteraan_Pimpinan_dan_Anggota_DPRD into #31 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.04.12.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Transportasi_DPRD, sum(Realisasi)Realisasi_Belanja_Tunjangan_Transportasi_DPRD into #32 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.04.13.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Uang_Jasa_Pengabdian_DPRD, sum(Realisasi)Realisasi_Belanja_Uang_Jasa_Pengabdian_DPRD into #33 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.04.14.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Gaji_Pokok_KDH_WKDH, sum(Realisasi)Realisasi_Belanja_Gaji_Pokok_KDH_WKDH into #34 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.05.01.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Keluarga_KDH_WKDH, sum(Realisasi)Realisasi_Belanja_Tunjangan_Keluarga_KDH_WKDH into #35 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.05.02.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Jabatan_KDH_WKDH, sum(Realisasi)Realisasi_Belanja_Tunjangan_Jabatan_KDH_WKDH into #36 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.05.03.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_Beras_KDH_WKDH, sum(Realisasi)Realisasi_Belanja_Tunjangan_Beras_KDH_WKDH into #37 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.05.04.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Tunjangan_PPh_Tunjangan_Khusus_KDH_WKDH, sum(Realisasi)Realisasi_Belanja_Tunjangan_PPh_Tunjangan_Khusus_KDH_WKDH into #38 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.05.05.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Pembulatan_Gaji_KDH_WKDH, sum(Realisasi)Realisasi_Belanja_Pembulatan_Gaji_KDH_WKDH into #39 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.05.06.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Iuran_Jaminan_Kesehatan_bagi_KDH_WKDH, sum(Realisasi)Realisasi_Belanja_Iuran_Jaminan_Kesehatan_bagi_KDH_WKDH into #40 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.05.07.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Iuran_Jaminan_Kecelakaan_Kerja_KDH_WKDH, sum(Realisasi)Realisasi_Belanja_Iuran_Jaminan_Kecelakaan_Kerja_KDH_WKDH into #41 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.05.08.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Iuran_Jaminan_Kematian_KDH_WKDH, sum(Realisasi)Realisasi_Belanja_Iuran_Jaminan_Kematian_KDH_WKDH into #42 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.05.09.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Insentif_bagi_KDH_WKDH_atas_Pemungutan_Pajak_Daerah, sum(Realisasi)Realisasi_Belanja_Insentif_bagi_KDH_WKDH_atas_Pemungutan_Pajak_Daerah into #43 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.05.10.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Insentif_bagi_KDH_WKDH_atas_Pemungutan_Retribusi_Daerah_bagi_KDH_WKDH, sum(Realisasi)Realisasi_Belanja_Insentif_bagi_KDH_WKDH_atas_Pemungutan_Retribusi_Daerah_bagi_KDH_WKDH into #44 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.05.11.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Dana_Operasional_Pimpinan_DPRD, sum(Realisasi)Realisasi_Belanja_Dana_Operasional_Pimpinan_DPRD into #45 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.06.01.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Dana_Operasional_KDH_WKDH, sum(Realisasi)Realisasi_Belanja_Dana_Operasional_KDH_WKDH into #46 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.06.02.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Belanja_Pegawai_BLUD, sum(Realisasi)Realisasi_Belanja_Pegawai_BLUD into #47 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,13)='5.1.01.99.99.')
+group by unitkey
+
+select unitkey, sum(Anggaran)Anggaran_Agam, sum(Realisasi)Realisasi_Agam into #48 from #ANGGARAN_REALISASI
+where MTGKEY in (
+select mtgkey1 from #matang where left(kdper,7)='5.1.01.')
+group by unitkey
+
+--select * from #matang where left(kdper,13)='5.1.01.04.01.'
+
+select unitkey, nmunit into #NMUNIT from DAFTUNIT 
+where KDLEVEL='3'
+
+select NMUNIT, Anggaran_Belanja_gaji_pokok_ASN, Realisasi_Belanja_gaji_pokok_ASN,
+Anggaran_Belanja_Tunjangan_Keluarga_ASN, Realisasi_Belanja_Tunjangan_Keluarga_ASN,
+Anggaran_Belanja_Tunjangan_Jabatan_ASN, Realisasi_Belanja_Tunjangan_Jabatan_ASN,
+Anggaran_Belanja_Tunjangan_Fungsional_ASN, Realisasi_Belanja_Tunjangan_Fungsional_ASN,
+Anggaran_Belanja_Tunjangan_Fungsional_Umum_ASN, Realisasi_Belanja_Tunjangan_Fungsional_Umum_ASN,
+Anggaran_Belanja_Tunjangan_Beras_ASN, Realisasi_Belanja_Tunjangan_Beras_ASN,
+Anggaran_Belanja_Tunjangan_PPh_Tunjangan_Khusus_ASN, Realisasi_Belanja_Tunjangan_PPh_Tunjangan_Khusus_ASN,
+Anggaran_Belanja_Pembulatan_Gaji_ASN, Realisasi_Belanja_Pembulatan_Gaji_ASN,
+Anggaran_Belanja_Iuran_Jaminan_Kesehatan_ASN, Realisasi_Belanja_Iuran_Jaminan_Kesehatan_ASN,
+Anggaran_Belanja_Iuran_Jaminan_Kecelakaan_Kerja_ASN, Realisasi_Belanja_Iuran_Jaminan_Kecelakaan_Kerja_ASN,
+Anggaran_Belanja_Iuran_Jaminan_Kematian_ASN, Realisasi_Belanja_Iuran_Jaminan_Kematian_ASN,
+Anggaran_Tambahan_Penghasilan_Berdasarkan_Beban_Kerja_ASN, Realisasi_Tambahan_Penghasilan_Berdasarkan_Beban_Kerja_ASN,
+Anggaran_Tambahan_Penghasilan_Berdasarkan_Konsisi_Kerja_ASN, Realisasi_Tambahan_Penghasilan_Berdasarkan_Kondisi_Kerja_ASN,
+Anggaran_Tambahan_Penghasilan_Berdasarkan_Kelangkaan_Profesi_ASN, Realisasi_Anggaran_Tambahan_Penghasilan_Berdasarkan_Kelangkaan_Profesi_ASN,
+Anggaran_Belanja_Insentif_Bagi_ASN_atas_Pemungutan_Pajak_Daerah, Realisasi_Belanja_Insentif_Bagi_ASN_atas_Pemungutan_Pajak_Daerah,
+Anggaran_Belanja_Bagi_ASN_atas_Insentif_Pemungutan_Retribusi_Daerah, Realisasi_Belanja_Bagi_ASN_atas_Insentif_Pemungutan_Retribusi_Daerah,
+Anggaran_Belanja_Tunjangan_Profesi_Guru_TPG_PNSD, Realisasi_Belanja_Tunjangan_Profesi_Guru_TPG_PNSD,
+Anggaran_Belanja_Tambahan_Penghasilan_Tamsil_Guru_PNSD, Realisasi_Belanja_Tambahan_Penghasilan_Tamsil_Guru_PNSD,
+Anggaran_Belanja_Jasa_Pelayanan_Kesehatan_Bagi_ASN, Realisasi_Belanja_Jasa_Pelayanan_Kesehatan_Bagi_ASN,
+Anggaran_Belanja_Honorarium, Realisasi_Belanja_Honorarium,
+Anggaran_Belanja_Uang_Representasi_DPRD, Realisasi_Belanja_Uang_Representasi_DPRD,
+Anggaran_Belanja_Tunjangan_Keluarga_DPRD, Realisasi_Belanja_Tunjangan_Keluarga_DPRD,
+Anggaran_Belanja_Tunjangan_Beras_DPRD, Realisasi_Belanja_Tunjangan_Beras_DPRD,
+Anggaran_Belanja_Uang_Paket_DPRD, Realisasi_Belanja_Uang_Paket_DPRD,
+Anggaran_Belanja_Tunjangan_Jabatan_DPRD, Realisasi_Belanja_Tunjangan_Jabatan_DPRD,
+Anggaran_Belanja_Tunjangan_Alat_Kelengkapan_DPRD, Realisasi_Belanja_Tunjangan_Alat_Kelengkapan_DPRD,
+Anggaran_Belanja_Tunjangan_Alat_Kelengkapan_Lainnya_DPRD, Realisasi_Belanja_Tunjangan_Alat_Kelengkapan_Lainnya_DPRD,
+Anggaran_Belanja_Tunjangan_Komunikasi_Intensif_Pimpinan_dan_Anggota_DPRD, Realisasi_Belanja_Tunjangan_Komunikasi_Intensif_Pimpinan_dan_Anggota_DPRD,
+Anggaran_Belanja_Tunjangan_Reses_DPRD, Realisasi_Belanja_Tunjangan_Reses_DPRD,
+Anggaran_Belanja_Pembebanan_PPh_kepada_Pimpinan_dan_Anggota_DPRD, Realisasi_Belanja_Pembebanan_PPh_kepada_Pimpinan_dan_Anggota_DPRD,
+Anggaran_Belanja_Tunjangan_Kesejahteraan_Pimpinan_dan_Anggota_DPRD, Realisasi_Belanja_Tunjangan_Kesejahteraan_Pimpinan_dan_Anggota_DPRD,
+Anggaran_Belanja_Tunjangan_Transportasi_DPRD, Realisasi_Belanja_Tunjangan_Transportasi_DPRD,
+Anggaran_Belanja_Uang_Jasa_Pengabdian_DPRD, Realisasi_Belanja_Uang_Jasa_Pengabdian_DPRD,
+Anggaran_Belanja_Gaji_Pokok_KDH_WKDH, Realisasi_Belanja_Gaji_Pokok_KDH_WKDH,
+Anggaran_Belanja_Tunjangan_Keluarga_KDH_WKDH, Realisasi_Belanja_Tunjangan_Keluarga_KDH_WKDH,
+Anggaran_Belanja_Tunjangan_Jabatan_KDH_WKDH, Realisasi_Belanja_Tunjangan_Jabatan_KDH_WKDH,
+Anggaran_Belanja_Tunjangan_Beras_KDH_WKDH, Realisasi_Belanja_Tunjangan_Beras_KDH_WKDH,
+Anggaran_Belanja_Tunjangan_PPh_Tunjangan_Khusus_KDH_WKDH, Realisasi_Belanja_Tunjangan_PPh_Tunjangan_Khusus_KDH_WKDH,
+Anggaran_Belanja_Pembulatan_Gaji_KDH_WKDH, Realisasi_Belanja_Pembulatan_Gaji_KDH_WKDH,
+Anggaran_Belanja_Iuran_Jaminan_Kesehatan_bagi_KDH_WKDH, Realisasi_Belanja_Iuran_Jaminan_Kesehatan_bagi_KDH_WKDH,
+Anggaran_Belanja_Iuran_Jaminan_Kecelakaan_Kerja_KDH_WKDH, Realisasi_Belanja_Iuran_Jaminan_Kecelakaan_Kerja_KDH_WKDH,
+Anggaran_Belanja_Iuran_Jaminan_Kematian_KDH_WKDH, Realisasi_Belanja_Iuran_Jaminan_Kematian_KDH_WKDH,
+Anggaran_Belanja_Insentif_bagi_KDH_WKDH_atas_Pemungutan_Pajak_Daerah, Realisasi_Belanja_Insentif_bagi_KDH_WKDH_atas_Pemungutan_Pajak_Daerah,
+Anggaran_Belanja_Insentif_bagi_KDH_WKDH_atas_Pemungutan_Retribusi_Daerah_bagi_KDH_WKDH, Realisasi_Belanja_Insentif_bagi_KDH_WKDH_atas_Pemungutan_Retribusi_Daerah_bagi_KDH_WKDH,
+Anggaran_Belanja_Dana_Operasional_Pimpinan_DPRD, Realisasi_Belanja_Dana_Operasional_Pimpinan_DPRD,
+Anggaran_Belanja_Dana_Operasional_KDH_WKDH, Realisasi_Belanja_Dana_Operasional_KDH_WKDH,
+Anggaran_Belanja_Pegawai_BLUD, Realisasi_Belanja_Pegawai_BLUD,
+Anggaran_Agam, Realisasi_Agam
+from #NMUNIT a
+left join #1 b on a.UNITKEY=b.unitkey 
+left join #2 c on a.UNITKEY=c.unitkey 
+left join #3 d on a.UNITKEY=d.unitkey
+left join #4 e on a.UNITKEY=e.unitkey
+left join #5 f on a.UNITKEY=f.unitkey
+left join #6 g on a.UNITKEY=g.unitkey
+left join #7 h on a.UNITKEY=h.unitkey
+left join #8 i on a.UNITKEY=i.unitkey
+left join #9 j on a.UNITKEY=j.unitkey
+left join #10 k on a.UNITKEY=k.unitkey
+left join #11 l on a.UNITKEY=l.unitkey
+left join #12 m on a.UNITKEY=m.unitkey
+left join #13 n on a.UNITKEY=n.unitkey
+left join #14 o on a.UNITKEY=o.unitkey
+left join #15 p on a.UNITKEY=p.unitkey
+left join #16 q on a.UNITKEY=q.unitkey
+left join #17 r on a.UNITKEY=r.unitkey
+left join #18 s on a.UNITKEY=s.unitkey
+left join #19 t on a.UNITKEY=t.unitkey
+left join #20 u on a.UNITKEY=u.unitkey
+left join #21 v on a.UNITKEY=v.unitkey
+left join #22 w on a.UNITKEY=w.unitkey
+left join #23 x on a.UNITKEY=x.unitkey
+left join #24 y on a.UNITKEY=y.unitkey
+left join #25 z on a.UNITKEY=z.unitkey
+left join #26 aa on a.UNITKEY=aa.unitkey
+left join #27 bb on a.UNITKEY=bb.unitkey
+left join #28 cc on a.UNITKEY=cc.unitkey
+left join #29 dd on a.UNITKEY=dd.unitkey
+left join #30 ee on a.UNITKEY=ee.unitkey
+left join #31 ff on a.UNITKEY=ff.unitkey
+left join #32 gg on a.UNITKEY=gg.unitkey
+left join #33 hh on a.UNITKEY=hh.unitkey
+left join #34 ii on a.UNITKEY=ii.unitkey
+left join #35 jj on a.UNITKEY=jj.unitkey
+left join #36 kk on a.UNITKEY=kk.unitkey
+left join #37 ll on a.UNITKEY=ll.unitkey
+left join #38 mm on a.UNITKEY=mm.unitkey
+left join #39 nn on a.UNITKEY=nn.unitkey
+left join #40 oo on a.UNITKEY=oo.unitkey
+left join #41 pp on a.UNITKEY=pp.unitkey
+left join #42 qq on a.UNITKEY=qq.unitkey
+left join #43 rr on a.UNITKEY=rr.unitkey
+left join #44 ss on a.UNITKEY=ss.unitkey
+left join #45 tt on a.UNITKEY=tt.unitkey
+left join #46 uu on a.UNITKEY=uu.unitkey
+left join #47 vv on a.UNITKEY=vv.unitkey
+left join #48 ww on a.UNITKEY=ww.unitkey
+
+where Anggaran_Belanja_gaji_pokok_ASN is not null
